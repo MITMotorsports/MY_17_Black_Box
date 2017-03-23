@@ -1,10 +1,4 @@
-#include "Arduino.h"
-#include "SdFat.h"
-#include <TimeLib.h>
-#include <FlexCAN.h>
-
 #include "SD_Manager.h"
-#include "Data_Types.h"
 
 SdFatSdioEX sdEx;
 
@@ -46,33 +40,34 @@ void SD_Manager::initialize(time_t cur_time, usb_serial_class &serial){
   sdEx.ls(serial);
   }
 
-//Wrapper for the data_types parse_message function
-void SD_Manager::parse_message(CAN_message_t &msg){
-  parse_message(msg, writeData);
-}
+  // //Wrapper for the data_types parse_message function
+  // void SD_Manager::parse_message(CAN_message_t &msg){
+  //   //std::function<int(SD_Manager&, data_log_t)> write_func = &SD_Manager::writeData;
+  //   data_parse_message(msg, &SD_Manager::writeData, this);
+  // }
 
 int SD_Manager::writeData(data_log_t data){
   bool didItOpen = data_file.open(fileNameBuff,O_RDWR);
 
-  bytes_written = 0;
+  int bytes_written = 0;
   //print the timestamp
   long t = now();
   String ts = String(t, DEC);
   ts = ts + "_";
   int tsLen = ts.length();
-  tsBuff = new char[tsLen];
+  char *tsBuff = new char[tsLen];
   bytes_written += data_file.write(tsBuff, tsLen);
 
   //print the data type
-  bytes_written += data_file.write(data.type, 1);
+  bytes_written += data_file.write(&data.type, sizeof(char[1]));
 
   //print the data
-  bytes_written += data_file.write(data.data, data.data_length);
+  bytes_written += data_file.write(&data.data, sizeof(char[data.data_length]));
 
   data_file.close();
-  return w;
+  return bytes_written;
 }
 
-char* SD_Manager::readLine(){
-
-}
+// char* SD_Manager::readLine(){
+//
+// }

@@ -1,9 +1,13 @@
 #ifndef SD_MANAGER_H
 #define SD_MANAGER_H
 
+#include "Arduino.h"
+#include <functional>
 #include "SdFat.h"
 #include <FlexCAN.h>
-#include "Data_Types.h"
+#include <TimeLib.h>
+#include "Data_Log_Struct.h"
+
 
 extern SdFatSdioEX sdEx;
 
@@ -16,10 +20,10 @@ class SD_Manager {
   public:
     SD_Manager();
     void initialize(time_t cur_time, usb_serial_class &serial);
-    void parse_message(CAN_message_t &msg);
-    char* read_line();
-  private:
+    //void parse_message(CAN_message_t &msg);
     int writeData(data_log_t data);
+    //char* read_line();
+  private:
     //string? getDataFormat();
     //SdFatEX *sdEx;
     String fileName;

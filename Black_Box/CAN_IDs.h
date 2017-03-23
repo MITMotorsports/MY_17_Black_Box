@@ -1,0 +1,10 @@
+#ifndef CAN_IDS_H
+#define CAN_IDS_H
+
+const int FRONT_CAN_NODE_ANALOG_SENSORS = 0x030;
+const int FRONT_CAN_NODE_WHEEL_SPEED = 0x130;
+
+const int CURRENT_SENSOR_CURRENT = 0x521;
+const int CURRENT_SENSOR_VOLTAGE = 0x522;
+
+#endif
