@@ -23,3 +23,22 @@ void copy_from(uint8_t *source_array, int source_start_ind, int source_len, uint
     dest_array[dest_start_ind + i - source_start_ind] = source_array[i];
   }
 }
+
+bool compare_long_to_short(char *long_array, char *short_array, int len_short){
+  for(int i = 0; i < len_short; i++){
+    if(short_array[i] != long_array[i]){
+      return false;
+    }
+  }
+  return true;
+}
+
+void to_ascii_array(String input_string, char* char_array, int input_len){
+  for(int i = 0; i < input_len; i++){
+    char_array[i] = input_string[i];
+  }
+}
+
+char to_ascii(char input){
+  return ((int)input) - 48;
+}

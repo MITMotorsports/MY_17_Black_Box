@@ -2,16 +2,16 @@
 Welcome to the MY_17 Black Box Telemetry system user guide! Wow! Exciting!
 
 ## Uploading this code (with external editor)
-####Step 1:
+#### Step 1:
 Download [Arduino](https://www.arduino.cc/en/main/software) and
 [Teensyduino](https://www.pjrc.com/teensy/td_download.html).This code was
 developed using Arduino Version 1.6.12 and Teensy Loader Version 1.31.
 
-####Step 2:
+#### Step 2:
 Aquire a Black Box with a Teensy 3.6. Connect the Teensy to your computer with a
 Micro-USB cable. Open up the *Black_Box.ino* file in Arduino.
 
-####Step 3:
+#### Step 3:
 Go to the preferences menu:
 * **Mac:** *Arduino->Preferences...*
 * **Windows:**  *File->Preferences*
@@ -20,7 +20,7 @@ Go to the preferences menu:
 Once in this menu, check the box for *Use external editor*. Also go to *Tools->
 Board* and select *Teensy 3.6*.
 
-####Step 4:
+#### Step 4:
 Click the upload button and you will be good to go! You can now also open this
 code in your favorite text editor and make changes, save, and re-upload with out
 ever having to edit anything in the Arduino IDE. If you like using the Arduino
