@@ -1,5 +1,6 @@
 #include <TimeLib.h>
 #include <FlexCAN.h>
+#include <stdio.h>
 
 #include "Xbee_Manager.h"
 #include "SD_Manager.h"
@@ -39,7 +40,20 @@ void setup(){
   }
 
   //SD initialization
-  Serial.println(hour(now()));
+  int tmp = year(now());
+  String year = String(tmp, DEC);
+  tmp = month(now());
+  String month = String(tmp, DEC);
+  tmp = day(now());
+  String day = String(tmp, DEC);
+  tmp = hour(now());
+  String hour = String(tmp, DEC);
+  tmp = minute(now());
+  String minute = String(tmp, DEC);
+  tmp = second(now());
+  String second = String(tmp, DEC);
+  Serial.println("Current Time: "+day+'-'+month+'-'+year+' '+hour+':'+minute+':'+second);
+
   sd.initialize(now(), Serial);
 
   //Xbee initialization
@@ -92,8 +106,6 @@ void loop(){
 
     Serial.println(bytes_read);
   }
-  //int did = sd.writeData(5);
-  //Serial.println(did);
 }
 
 

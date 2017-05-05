@@ -18,6 +18,12 @@ void copy_into(uint8_t *source_array, int source_len, uint8_t *dest_array, int d
   }
 }
 
+void copy_into(char *source_array, int source_len, char *dest_array, int dest_start_ind){
+  for(int i = dest_start_ind; i < (dest_start_ind+source_len); i++){
+    dest_array[i] = source_array[i - dest_start_ind];
+  }
+}
+
 void copy_from(uint8_t *source_array, int source_start_ind, int source_len, uint8_t *dest_array, int dest_start_ind){
   for(int i = source_start_ind; i < (source_start_ind+source_len); i++){
     dest_array[dest_start_ind + i - source_start_ind] = source_array[i];

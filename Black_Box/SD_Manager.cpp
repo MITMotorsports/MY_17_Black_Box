@@ -14,7 +14,7 @@ void SD_Manager::initialize(time_t cur_time, usb_serial_class &serial){
 
   // make sdEx the current volume.
   bool didItOpen = sdEx.chdir();
-  serial.println(didItOpen);
+  // serial.println(didItOpen);
   sdEx.chvol();
 
   //create logging file
@@ -37,33 +37,61 @@ void SD_Manager::initialize(time_t cur_time, usb_serial_class &serial){
 
   fnLen = name_len + 4; //4 for ".txt"
   fileNameBuff = new char[fnLen];
-  serial.print("fnlen: ");
-  serial.println(fnLen);
+  // serial.print("fnlen: ");
+  // serial.println(fnLen);
   for(int i = 0; i < fnLen-4; i++){
-    serial.print(i);
-    serial.print(" ");
-    serial.println(fileName[i]);
+    // serial.print(i);
+    // serial.print(" ");
+    // serial.println(fileName[i]);
     fileNameBuff[i] = fileName[i];
   }
 
   String log_text = String(".txt");
   for(int i = 0; i < 4; i++){
-    serial.print(i+name_len);
-    serial.print(" ");
-    serial.println(log_text[i]);
-    serial.print(" ");
-    serial.println(fileNameBuff[i-1]);
+    // serial.print(i+name_len);
+    // serial.print(" ");
+    // serial.println(log_text[i]);
+    // serial.print(" ");
+    // serial.println(fileNameBuff[i-1]);
     fileNameBuff[(i+name_len)] = log_text[i];
   }
 
-  Serial.print("CURRENT FILE NAME: ");
-  serial.println(fileNameBuff);
-  didItOpen = data_file.open(fileNameBuff,O_RDWR|O_CREAT);
-  serial.println(didItOpen);
-  data_file.write(4);
-  data_file.close();
-  sdEx.ls(serial);
+  //Check if file with same name exists, change name if it does
+  if(sdEx.exists(fileNameBuff)){
+    //add an 'A' to the end of the name, increase the letter if file still taken
+    int new_len = fnLen + 1;
+    char newFileNameBuff[new_len]; //New array with extra space for new char
+    copy_into(fileNameBuff, fnLen, newFileNameBuff, 0);
+
+    //push back the '.txt'
+    for(int i = new_len-2; i >= new_len-5; i--){
+      newFileNameBuff[i+1] = newFileNameBuff[i];
+    }
+
+    //check if file name with added 'A' exists, if try 'B' then 'C' etc...
+    char suffix = 'A';
+    newFileNameBuff[new_len-5] = suffix;
+    while(sdEx.exists(newFileNameBuff)){
+      suffix = char(int(suffix)+1);
+      newFileNameBuff[new_len-5] = suffix;
+    }
+
+    //found a good file name, use it
+    Serial.print("CURRENT FILE NAME: ");
+    serial.println(newFileNameBuff);
+    didItOpen = data_file.open(newFileNameBuff,O_RDWR|O_CREAT);
+    serial.println(didItOpen);
+    data_file.close();
+    sdEx.ls(serial);
+  }else{
+    Serial.print("CURRENT FILE NAME: ");
+    serial.println(fileNameBuff);
+    didItOpen = data_file.open(fileNameBuff,O_RDWR|O_CREAT);
+    serial.println(didItOpen);
+    data_file.close();
+    sdEx.ls(serial);
   }
+}
 
   // //Wrapper for the data_types parse_message function
   // void SD_Manager::parse_message(CAN_message_t &msg){
@@ -99,6 +127,10 @@ int SD_Manager::writeData(data_log_t data){
   return bytes_written;
 }
 
+//Writes a raw CAN message into an SD card file
+//The format is:
+//'TIMESTAMP'_'CAN ID'_'MESSAGE LENGTH'_'MESSAGE DATA'_'LINE COUNT'
+//Everything is written as ASCCI except MESSAGE DATA which is just bytes
 int SD_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial){
   //do not write if file is already open
   if(data_file.isOpen()){
