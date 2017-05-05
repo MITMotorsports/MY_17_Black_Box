@@ -2,7 +2,6 @@
 #define SD_MANAGER_H
 
 #include "Arduino.h"
-// #include <functional>
 #include "SdFat.h"
 #include <FlexCAN.h>
 #include <TimeLib.h>
@@ -36,6 +35,7 @@ class SD_Manager {
     char *fileNameBuff;
     File data_file;
     uint32_t data_pos;
+    int line_count;
 };
 
 #endif

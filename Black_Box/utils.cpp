@@ -48,3 +48,23 @@ void to_ascii_array(String input_string, char* char_array, int input_len){
 char to_ascii(char input){
   return ((int)input) - 48;
 }
+
+int int_byte_length(int input){
+  int byte_length = 1;
+  double divide = input/10.0;
+  while(int(divide) >= 1){
+    divide = divide/10.0;
+    byte_length++;
+  }
+  return byte_length;
+}
+
+//convert an interger in to an ascii representation of itself
+void to_ascii_array(int input, char* char_array, int input_len){
+  for(int i = input_len-1; i >= 0; i--){
+    int place = pow(10, i);
+    int value = input/place;
+    char_array[i] = (char)value + 48;
+    input = input - place*value;
+  }
+}

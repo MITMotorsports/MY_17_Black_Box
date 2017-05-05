@@ -10,5 +10,7 @@ void copy_from(uint8_t *source_array, int source_start_ind, int source_len, uint
 bool compare_long_to_short(char *long_array, char *short_array, int len_short);
 void to_ascii_array(String input_string, char* char_array, int input_len);
 char to_ascii(char input);
+int int_byte_length(int input);
+void to_ascii_array(int input, char* char_array, int input_len);
 
 #endif

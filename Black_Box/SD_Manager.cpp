@@ -5,6 +5,7 @@ SdFatSdioEX sdEx;
 SD_Manager::SD_Manager(){
   //sdEx = new SdFatEX();
   data_pos = 0;
+  line_count = 0;
   }
 
 void SD_Manager::initialize(time_t cur_time, usb_serial_class &serial){
@@ -153,19 +154,45 @@ int SD_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial){
   to_ascii_array(ts, tsBuff, tsLen);
   bytes_written += data_file.write(tsBuff, tsLen);
   for(int i = 0; i < tsLen; i++){
-    serial.print(tsBuff[i]);
+    serial.write(tsBuff[i]);
   }
   //print the data type
   uint8_t* id_array = (uint8_t*) &msg.id;
-
-  bytes_written += data_file.write(id_array, sizeof(id_array));
-  serial.write(id_array[0]);
+  int id_print_len = int_byte_length(msg.id);
+  char *id_buff = new char[id_print_len];
+  to_ascii_array(msg.id, id_buff, id_print_len);
+  bytes_written += data_file.write(id_buff, sizeof(id_buff));
   bytes_written += data_file.write('_');
+  for(int i = id_print_len-1; i >= 0; i--){
+    serial.print(id_buff[i]);
+  }
+  serial.write('_');
+
+  //print the msg length
+  bytes_written += data_file.write((char)msg.len+48);
+  bytes_written += data_file.write('_');
+  serial.write((char)msg.len+48);
+  serial.write('_');
+
   //print the data
   bytes_written += data_file.write(&msg.buf, (size_t)msg.len);
-  serial.write(msg.buf[0]);
-  serial.println();
+  bytes_written += data_file.write('_');
+  for(int i = 0; i < msg.len; i++){
+    serial.write(msg.buf[i]);
+  }
+  serial.write('_');
+
+  //print the line count
+  int lc_print_len = int_byte_length(line_count);
+  char *lc_buff = new char[lc_print_len];
+  to_ascii_array(line_count, lc_buff, lc_print_len);
+  bytes_written += data_file.write(lc_buff, sizeof(id_buff));
   bytes_written += data_file.write('\n');
+  for(int i = lc_print_len-1; i >= 0; i--){
+    serial.print(lc_buff[i]);
+  }
+  serial.write('\n');
+  line_count++;
 
   data_pos = data_file.curPosition();
   Serial.print("Final Pos: ");
