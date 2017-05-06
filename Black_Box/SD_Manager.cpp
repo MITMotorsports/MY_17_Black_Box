@@ -164,8 +164,8 @@ int SD_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial){
     data_file.open(fileNameBuff,O_RDWR);
   }
 
-  Serial.print("Start Pos: ");
-  Serial.println(data_pos);
+  serial.print("Start Pos: ");
+  serial.println(data_pos);
   data_file.seekSet(data_pos);
   int bytes_written = 0;
 
@@ -228,8 +228,8 @@ int SD_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial){
   line_count++;
 
   data_pos = data_file.curPosition();
-  Serial.print("Final Pos: ");
-  Serial.println(data_pos);
+  serial.print("Final Pos: ");
+  serial.println(data_pos);
   data_file.close();
   return bytes_written;
 }

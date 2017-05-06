@@ -78,6 +78,7 @@ void loop(){
     CAN_bus_sensor.read(msg); //Read message into CAN_message_t buffer
     Serial.println();
     int a = sd.write_raw_data(msg, Serial);
+    int b = xbee.write_raw_data(msg, Serial);
     //sd.parse_message(msg); //send to SD manager for logging
     //data_parse_message(msg, &SD_Manager::writeData, sd);
     //TODO add xBee Parser
