@@ -204,17 +204,27 @@ int SD_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial){
     serial.write(msg.buf[i]);
   }
   serial.write('_');
-
+  // serial.println();
   //print the line count
   int lc_print_len = int_byte_length(line_count);
+  // serial.print("print_len: ");
+  // serial.println(lc_print_len);
+  // serial.print("line_count: ");
+  // serial.println(line_count);
   char *lc_buff = new char[lc_print_len];
   to_ascii_array(line_count, lc_buff, lc_print_len);
-  bytes_written += data_file.write(lc_buff, sizeof(lc_buff));
-  bytes_written += data_file.write('\n');
   for(int i = 0; i < lc_print_len; i++){
+    bytes_written += data_file.write(lc_buff[i]);
+    // serial.print("index[");
+    // serial.print(i);
+    // serial.print("]: ");
     serial.print(lc_buff[i]);
   }
+  bytes_written += data_file.write('\n');
   serial.write('\n');
+  // serial.print("print whole buf: ");
+  // serial.print(lc_buff);
+  // serial.println("[]");
   line_count++;
 
   data_pos = data_file.curPosition();
