@@ -36,15 +36,18 @@ void SD_Manager::initialize(time_t cur_time, usb_serial_class &serial){
   String fileName = month + s + day + s + hour;
   int name_len = fileName.length();
 
-  fnLen = name_len + 4; //4 for ".txt"
-  fileNameBuff = new char[fnLen];
+  fnLen = name_len + 4 + 1; //4 for ".txt" and null terminator
+  serial.print("fnlen: ");
+  serial.println(fnLen);
+  char tmpFileNameBuff[fnLen];
   // serial.print("fnlen: ");
   // serial.println(fnLen);
   for(int i = 0; i < fnLen-4; i++){
     // serial.print(i);
     // serial.print(" ");
     // serial.println(fileName[i]);
-    fileNameBuff[i] = fileName[i];
+    tmpFileNameBuff[i] = fileName[i];
+    serial.println(fileName[i]);
   }
 
   String log_text = String(".txt");
@@ -54,44 +57,65 @@ void SD_Manager::initialize(time_t cur_time, usb_serial_class &serial){
     // serial.println(log_text[i]);
     // serial.print(" ");
     // serial.println(fileNameBuff[i-1]);
-    fileNameBuff[(i+name_len)] = log_text[i];
+    tmpFileNameBuff[(i+name_len)] = log_text[i];
+    serial.println(log_text[i]);
   }
+  tmpFileNameBuff[name_len+5] = '\0';
 
+  int new_len;
   //Check if file with same name exists, change name if it does
-  if(sdEx.exists(fileNameBuff)){
-    //add an 'A' to the end of the name, increase the letter if file still taken
-    int new_len = fnLen + 1;
-    char newFileNameBuff[new_len]; //New array with extra space for new char
-    copy_into(fileNameBuff, fnLen, newFileNameBuff, 0);
+  serial.print(tmpFileNameBuff);
+  serial.println("[Checking if this name exists]");
+  serial.print("exists?: ");
+  serial.println(sdEx.exists(tmpFileNameBuff));
 
-    //push back the '.txt'
-    for(int i = new_len-2; i >= new_len-5; i--){
+
+  if(sdEx.exists(tmpFileNameBuff)){
+    //add an 'A' to the end of the name, increase the letter if file still taken
+    new_len = fnLen + 1;
+    char newFileNameBuff[new_len]; //New array with extra space for new char
+    copy_into(tmpFileNameBuff, fnLen, newFileNameBuff, 0);
+
+    //push back the '.txt\0'
+    for(int i = new_len-2; i >= new_len-6; i--){
       newFileNameBuff[i+1] = newFileNameBuff[i];
     }
 
     //check if file name with added 'A' exists, if try 'B' then 'C' etc...
     char suffix = 'A';
-    newFileNameBuff[new_len-5] = suffix;
+    newFileNameBuff[new_len-6] = suffix;
     while(sdEx.exists(newFileNameBuff)){
       suffix = char(int(suffix)+1);
-      newFileNameBuff[new_len-5] = suffix;
+      newFileNameBuff[new_len-6] = suffix;
     }
 
     //found a good file name, use it
-    Serial.print("CURRENT FILE NAME: ");
-    serial.println(newFileNameBuff);
-    didItOpen = data_file.open(newFileNameBuff,O_RDWR|O_CREAT);
-    serial.println(didItOpen);
-    data_file.close();
-    sdEx.ls(serial);
+    fileNameBuff = new char[new_len];
+    // serial.println(fileNameBuff);
+    copy_into(newFileNameBuff, new_len, fileNameBuff, 0);
+    // serial.println(fileNameBuff);
+    for(int i = 0; i < new_len; i++){
+      serial.print(fileNameBuff[i]);
+    }
+    serial.print("[name existed this choosen instead]");
+    serial.println();
+    // serial.println(fileNameBuff);
   }else{
-    Serial.print("CURRENT FILE NAME: ");
-    serial.println(fileNameBuff);
-    didItOpen = data_file.open(fileNameBuff,O_RDWR|O_CREAT);
-    serial.println(didItOpen);
-    data_file.close();
-    sdEx.ls(serial);
+    fileNameBuff = new char[fnLen];
+    copy_into(tmpFileNameBuff, fnLen, fileNameBuff, 0);
+    for(int i = 0; i < fnLen; i++){
+      serial.print(fileNameBuff[i]);
+    }
+    serial.print("[name did not exist]");
+    serial.println();
   }
+
+  serial.print("CURRENT FILE NAME: ");
+  serial.println(fileNameBuff);
+  didItOpen = data_file.open(fileNameBuff,O_RDWR|O_CREAT);
+  serial.println(didItOpen);
+  data_file.close();
+  sdEx.ls(serial);
 }
 
   // //Wrapper for the data_types parse_message function
@@ -157,13 +181,12 @@ int SD_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial){
     serial.write(tsBuff[i]);
   }
   //print the data type
-  uint8_t* id_array = (uint8_t*) &msg.id;
   int id_print_len = int_byte_length(msg.id);
   char *id_buff = new char[id_print_len];
   to_ascii_array(msg.id, id_buff, id_print_len);
   bytes_written += data_file.write(id_buff, sizeof(id_buff));
   bytes_written += data_file.write('_');
-  for(int i = id_print_len-1; i >= 0; i--){
+  for(int i = 0; i < id_print_len; i++){
     serial.print(id_buff[i]);
   }
   serial.write('_');
@@ -186,9 +209,9 @@ int SD_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial){
   int lc_print_len = int_byte_length(line_count);
   char *lc_buff = new char[lc_print_len];
   to_ascii_array(line_count, lc_buff, lc_print_len);
-  bytes_written += data_file.write(lc_buff, sizeof(id_buff));
+  bytes_written += data_file.write(lc_buff, sizeof(lc_buff));
   bytes_written += data_file.write('\n');
-  for(int i = lc_print_len-1; i >= 0; i--){
+  for(int i = 0; i < lc_print_len; i++){
     serial.print(lc_buff[i]);
   }
   serial.write('\n');
@@ -227,15 +250,29 @@ int SD_Manager::dump_file(usb_serial_class &serial, char* path, int path_len){
   data_file.rewind();
   int bytes_read = 0;
   serial.println("Line Start");
-  int line_count = 0;
+  int under_count = 0;
+  serial.print("data_file available?: ");
+  serial.println(data_file.available());
   while (data_file.available()) {
     int tmp = data_file.read();
     serial.print(char(tmp));
-    if(tmp == int('\n')){
-      bytes_read = bytes_read + XBEE.write('_');
-      bytes_read = bytes_read + XBEE.print(line_count);
+    if(tmp == int('_')){
+      under_count++;
+    }
+    if(under_count == 1){
+      int msglen = data_file.read();
+      int tmp2 = data_file.read();
+      bytes_read = bytes_read + XBEE.write(byte(tmp));
+      bytes_read = bytes_read + XBEE.write(byte(msglen));
+      bytes_read = bytes_read + XBEE.write(byte(tmp2));
+
+      msglen = msglen - 48; //convert to int from ascii
+      for(int i = 0; i < msglen; i++){
+        tmp = data_file.read();
+        bytes_read = bytes_read + XBEE.write(byte(tmp));
+      }
+    }else if(under_count > 1 & tmp == int('\n')){
       bytes_read = bytes_read + XBEE.write('\n');
-      line_count++;
       serial.println("Line End");
     }else {
       bytes_read = bytes_read + XBEE.write(byte(tmp));
@@ -243,8 +280,6 @@ int SD_Manager::dump_file(usb_serial_class &serial, char* path, int path_len){
   }
   XBEE.write("end\n");
   data_file.close();
-  serial.print("Lines Sent: ");
-  serial.println(line_count);
   return bytes_read;
 }
 

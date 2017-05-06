@@ -61,10 +61,12 @@ int int_byte_length(int input){
 
 //convert an interger in to an ascii representation of itself
 void to_ascii_array(int input, char* char_array, int input_len){
+  int ind = 0;
   for(int i = input_len-1; i >= 0; i--){
     int place = pow(10, i);
     int value = input/place;
-    char_array[i] = (char)value + 48;
+    char_array[ind] = (char)value + 48;
     input = input - place*value;
+    ind++;
   }
 }

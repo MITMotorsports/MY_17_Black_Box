@@ -99,7 +99,7 @@ void loop(){
     // Serial.println();
     sd.open_file(path);
     int bytes_read = sd.dump_file(Serial, path, path_len);
-
+    Serial.print("bytes_read from file: ");
     Serial.println(bytes_read);
   }
 }
