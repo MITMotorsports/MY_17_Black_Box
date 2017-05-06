@@ -184,11 +184,11 @@ int SD_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial){
   int id_print_len = int_byte_length(msg.id);
   char *id_buff = new char[id_print_len];
   to_ascii_array(msg.id, id_buff, id_print_len);
-  bytes_written += data_file.write(id_buff, sizeof(id_buff));
-  bytes_written += data_file.write('_');
   for(int i = 0; i < id_print_len; i++){
+    bytes_written += data_file.write(id_buff[i]);
     serial.print(id_buff[i]);
   }
+  bytes_written += data_file.write('_');
   serial.write('_');
 
   //print the msg length
