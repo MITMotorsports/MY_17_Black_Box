@@ -31,7 +31,7 @@ void setup(){
 
   //RTC initialization
   setSyncProvider(getTeensy3Time);
-  while(!Serial);
+  // while(!Serial);
   delay(100);
   if (timeStatus()!= timeSet) {
     Serial.println("Unable to sync with the RTC");
