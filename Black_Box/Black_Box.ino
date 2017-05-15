@@ -6,6 +6,7 @@
 #include "SD_Manager.h"
 #include "IMU_Manager.h"
 #include "utils.h"
+#include "pins.h"
 
 //SD Card Variables
 SD_Manager sd;
@@ -24,14 +25,16 @@ Xbee_Manager xbee;
 void setup(){
   //Serial initialization
   Serial.begin(9600); //start Serial port, baud rate defaults to full USB speed
+  Serial.println("USB Serial started with  9600 Baud");
 
   //CAN initialization
   CAN_bus_main.begin();
-  CAN_bus_sensor.begin();
+  Serial.println("CAN Bus Main Started");
+  // CAN_bus_sensor.begin();
 
   //RTC initialization
   setSyncProvider(getTeensy3Time);
-  // while(!Serial);
+  while(!Serial);
   delay(100);
   if (timeStatus()!= timeSet) {
     Serial.println("Unable to sync with the RTC");
@@ -58,27 +61,27 @@ void setup(){
 
   //Xbee initialization
   xbee.initialize();
+  SPI.setSCK(LSM9DS1_SCK);
+  pinMode(LED, OUTPUT);
 }
 
+int LED_timer = millis();
+int LED_fliper = 1;
+
 void loop(){
-  //Serial.println(hour(now()));
+  if(millis() - LED_timer > 1000){
+    digitalWrite(LED, LED_fliper);
+    LED_fliper = !LED_fliper;
+    LED_timer = millis();
+  }
 
   //Check the Main bus for messages
   if(CAN_bus_main.available()){
+    Serial.println("main_msg");
     CAN_bus_main.read(msg); //Read message into CAN_message_t buffer
-    //sd.parse_message(msg); //send to SD manager for logging
-    //data_parse_message(msg, &SD_Manager::writeData, sd);
-    //TODO add xBee Parser
-    //TODO add command Parser
-    //TODO add transfer Parser
-  }
-
-  //Check the Sensor bus for messages
-  if(CAN_bus_sensor.available()){
-    CAN_bus_sensor.read(msg); //Read message into CAN_message_t buffer
-    Serial.println();
     int a = sd.write_raw_data(msg, Serial);
     int b = xbee.write_raw_data(msg, Serial);
+    Serial.println();
     //sd.parse_message(msg); //send to SD manager for logging
     //data_parse_message(msg, &SD_Manager::writeData, sd);
     //TODO add xBee Parser
@@ -103,6 +106,20 @@ void loop(){
     Serial.print("bytes_read from file: ");
     Serial.println(bytes_read);
   }
+
+  //Check the Sensor bus for messages
+  // if(CAN_bus_sensor.available()){
+  //   Serial.println("sensor_msg");
+  //   // CAN_bus_sensor.read(msg); //Read message into CAN_message_t buffer
+  //   // Serial.println();
+  //   // int a = sd.write_raw_data(msg, Serial);
+  //   // int b = xbee.write_raw_data(msg, Serial);
+  //   //sd.parse_message(msg); //send to SD manager for logging
+  //   //data_parse_message(msg, &SD_Manager::writeData, sd);
+  //   //TODO add xBee Parser
+  //   //TODO add command Parser
+  //   //TODO add transfer Parser
+  // }
 }
 
 
