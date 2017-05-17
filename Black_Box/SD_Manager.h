@@ -20,12 +20,15 @@ extern SdFatSdioEX sdEx;
 class SD_Manager {
   public:
     SD_Manager();
+    void initialize(time_t cur_time);
     void initialize(time_t cur_time, usb_serial_class &serial);
     //void parse_message(CAN_message_t &msg);
+    int write_raw_data(CAN_message_t &msg);
     int write_raw_data(CAN_message_t &msg, usb_serial_class &serial);
     int writeData(data_log_t data);
     void list_files(HardwareSerial *s);
     bool open_file(char* path);
+    int dump_file(char* path, int path_len);
     int dump_file(usb_serial_class &serial, char* path, int path_len);
     char line_buffer[100];
   private:

@@ -22,7 +22,7 @@ class Xbee_Manager {
   public:
     Xbee_Manager();
     void initialize();
-    int check_for_message(usb_serial_class &serial);
+    int check_for_message();
     bool send_message();
     int read_file_name();
     char* file_name_buf;

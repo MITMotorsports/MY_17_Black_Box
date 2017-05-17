@@ -34,7 +34,7 @@ void setup(){
 
   //RTC initialization
   setSyncProvider(getTeensy3Time);
-  while(!Serial);
+  // while(!Serial);
   delay(100);
   if (timeStatus()!= timeSet) {
     Serial.println("Unable to sync with the RTC");
@@ -57,7 +57,11 @@ void setup(){
   String second = String(tmp, DEC);
   Serial.println("Current Time: "+day+'-'+month+'-'+year+' '+hour+':'+minute+':'+second);
 
-  sd.initialize(now(), Serial);
+  if(!Serial){
+    sd.initialize(now());
+  }else{
+    sd.initialize(now(), Serial);
+  }
 
   //Xbee initialization
   xbee.initialize();
@@ -79,8 +83,8 @@ void loop(){
   if(CAN_bus_main.available()){
     Serial.println("main_msg");
     CAN_bus_main.read(msg); //Read message into CAN_message_t buffer
-    int a = sd.write_raw_data(msg, Serial);
-    int b = xbee.write_raw_data(msg, Serial);
+    int a = sd.write_raw_data(msg);
+    // int b = xbee.write_raw_data(msg, Serial);
     Serial.println();
     //sd.parse_message(msg); //send to SD manager for logging
     //data_parse_message(msg, &SD_Manager::writeData, sd);
@@ -89,7 +93,7 @@ void loop(){
     //TODO add transfer Parser
   }
 
-  int cmd = xbee.check_for_message(Serial);
+  int cmd = xbee.check_for_message();
   if(cmd == LS){
     sd.list_files(&XBEE);
     XBEE.write("end\n");
@@ -102,7 +106,7 @@ void loop(){
     }
     // Serial.println();
     sd.open_file(path);
-    int bytes_read = sd.dump_file(Serial, path, path_len);
+    int bytes_read = sd.dump_file(path, path_len);
     Serial.print("bytes_read from file: ");
     Serial.println(bytes_read);
   }

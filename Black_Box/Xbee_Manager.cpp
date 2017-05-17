@@ -14,7 +14,7 @@ void Xbee_Manager::initialize(){
   XBEE.begin(57600, SERIAL_8E1);
 }
 
-int Xbee_Manager::check_for_message(usb_serial_class &serial){
+int Xbee_Manager::check_for_message(){
   if(XBEE.available()){
     int bytesRead = XBEE.readBytesUntil('\n', xbeeBuffer, xbeeBufferLen);
     //recognize an LS
