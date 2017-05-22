@@ -21,20 +21,20 @@ SD_Manager::SD_Manager(){
     int tmp = month(cur_time);
     String month_s = String(tmp, DEC);
     int fnLen = month_s.length();
-    serial.print("fnlen month: ");
-    serial.println(fnLen);
+    // serial.print("fnlen month: ");
+    // serial.println(fnLen);
 
     tmp = day(cur_time);
     String day_s = String(tmp, DEC);
     fnLen = fnLen + day_s.length();
-    serial.print("fnlen day: ");
-    serial.println(fnLen);
+    // serial.print("fnlen day: ");
+    // serial.println(fnLen);
 
     tmp = hour(cur_time);
     String hour_s = String(tmp, DEC);
     fnLen = fnLen + hour_s.length();
-    serial.print("fnlen hour: ");
-    serial.println(fnLen);
+    // serial.print("fnlen hour: ");
+    // serial.println(fnLen);
 
     String sep = String('_');
 
@@ -43,27 +43,27 @@ SD_Manager::SD_Manager(){
 
     int suffix_pad = 5; //5 for ".txt" and null terminator
     fnLen = name_len + suffix_pad;
-    serial.print("fnlen: ");
-    serial.println(fnLen);
-    serial.print("name_len: ");
-    serial.println(name_len);
+    // serial.print("fnlen: ");
+    // serial.println(fnLen);
+    // serial.print("name_len: ");
+    // serial.println(name_len);
     char tmpFileNameBuff[fnLen];
     for(int i = 0; i < fnLen-suffix_pad; i++){
       tmpFileNameBuff[i] = fileName[i];
-      serial.print(i);
-      serial.print(" ");
-      serial.println(fileName[i]);
+      // serial.print(i);
+      // serial.print(" ");
+      // serial.println(fileName[i]);
     }
-    serial.println("suffix");
+    // serial.println("suffix");
     String log_text = String(".txt");
     //append the .txt
     for(int i = 0; i < 4; i++){
       tmpFileNameBuff[(i+name_len)] = log_text[i];
-      serial.print(i);
-      serial.print(" ");
-      serial.print(tmpFileNameBuff[(i+name_len)]);
-      serial.print(" ");
-      serial.println(log_text[i]);
+      // serial.print(i);
+      // serial.print(" ");
+      // serial.print(tmpFileNameBuff[(i+name_len)]);
+      // serial.print(" ");
+      // serial.println(log_text[i]);
     }
     //add null terminator to the end of the buffer
     tmpFileNameBuff[name_len+4] = '\0';
@@ -448,18 +448,19 @@ int SD_Manager::dump_file(char* path, int path_len){
   return bytes_read;
 }
 
-int SD_Manager::dump_file(usb_serial_class &serial, char* path, int path_len){
-  bool good = false;
+int SD_Manager::dump_file(char* path, int path_len,
+                          Xbee_Manager* xbee, usb_serial_class &serial){
+  //check that file is open, open it if it is not.
+  bool file_open = false;
   if(data_file.isOpen()){
     serial.println("File is Open");
-    good = true;
+    file_open = true;
   }else{
     serial.println("File is Closed, Opening File");
-    // bool good = data_file.open("4_28_15.txt",O_RDWR);
-    good = data_file.open(path,O_RDWR);
+    file_open = data_file.open(path,O_RDWR);
   }
 
-  if(good){
+  if(file_open){
     serial.print("Dumping File: ");
     for(int i = 0; i < path_len-1; i++){
       serial.print(path[i]);
@@ -467,47 +468,58 @@ int SD_Manager::dump_file(usb_serial_class &serial, char* path, int path_len){
     serial.println();
   }
 
-  data_file.rewind();
-  int bytes_read = 0;
-  serial.println("Line Start");
-  int under_count = 0;
-  serial.print("data_file available?: ");
-  serial.println(data_file.available());
-  while (data_file.available()) {
-    int tmp = data_file.read();
-    serial.print(char(tmp));
-    if(tmp == int('_')){
-      under_count++;
-    }
-    if(under_count == 1){
-      int msglen = data_file.read();
-      int tmp2 = data_file.read();
-      bytes_read = bytes_read + XBEE.write(byte(tmp));
-      bytes_read = bytes_read + XBEE.write(byte(msglen));
-      bytes_read = bytes_read + XBEE.write(byte(tmp2));
+  data_file.rewind(); //go back to the start of the file
+  int bytes_sent = 0;
 
-      msglen = msglen - 48; //convert to int from ascii
-      for(int i = 0; i < msglen; i++){
-        tmp = data_file.read();
-        bytes_read = bytes_read + XBEE.write(byte(tmp));
-      }
-    }else if(under_count > 1 & tmp == int('\n')){
-      bytes_read = bytes_read + XBEE.write('\n');
-      serial.println("Line End");
-    }else {
-      bytes_read = bytes_read + XBEE.write(byte(tmp));
-    }
+  //sending the file size
+  serial.print("Filesize: ");
+  uint32_t file_size = data_file.fileSize();
+  serial.println(file_size);
+  bytes_sent += xbee->write_bytes(file_size, 4);
+
+  serial.println("Send Log Start");
+  for(int i = 0; i < 4; i++){
+    int tmp = data_file.read();
+    bytes_sent += xbee->write_bytes(tmp, 1);
+    Serial.print(tmp, HEX);
   }
-  XBEE.write("end\n");
+  serial.println();
+
+  serial.println("Send Data");
+  //send 13 bytes at a time until the file is complete
+  int lines_sent = 0;
+  bool in_file = true;
+  while (in_file) {
+    Serial.print("Line #");
+    Serial.println(lines_sent);
+    for(int i = 0; i < 13; i++){
+      int tmp = data_file.read();
+      if(tmp == -1){
+        in_file = false;
+        break;
+      }
+      bytes_sent += xbee->write_bytes(tmp, 1);
+      Serial.print(tmp, HEX);
+    }
+    Serial.println();
+    lines_sent++;
+  }
+
+  //Send complete code - 13 bytes of 1's
+  for(int i = 0; i < 13; i++){
+    uint8_t pad = 255;
+    bytes_sent += xbee->write_bytes(pad, 1);
+  }
+  serial.println("File Complete");
   data_file.close();
-  return bytes_read;
+  return bytes_sent;
 }
 
 bool SD_Manager::open_file(char* path){
   return data_file.open(path,O_RDWR);
 }
 
-//Writes a 32bit number into the file
+//Writes multiple bytes little endian
 int SD_Manager::write_32_bit(uint32_t data, int num_bytes){
   uint8_t tmp_byte = 0;
   int bytes_written = 0;

@@ -11,12 +11,19 @@ Xbee_Manager::Xbee_Manager(){
 }
 
 void Xbee_Manager::initialize(){
-  XBEE.begin(57600, SERIAL_8E1);
+  //The xbee actually runs at 111111 baud not 115200 since its 16MHz clock
+  //cannot be evenly divided into 115200.
+  XBEE.begin(111111, SERIAL_8E1);
 }
 
 int Xbee_Manager::check_for_message(){
   if(XBEE.available()){
     int bytesRead = XBEE.readBytesUntil('\n', xbeeBuffer, xbeeBufferLen);
+    Serial.print("Xbee message recieved: ");
+    for(int i = 0; i < bytesRead; i++){
+      Serial.print(xbeeBuffer[i]);
+    }
+    Serial.println();
     //recognize an LS
     if(bytesRead == 2){
       char ls[2] = {'l','s'};
@@ -124,6 +131,20 @@ int Xbee_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial){
   // serial.print(lc_buff);
   // serial.println("[]");
   line_count++;
+
+  return bytes_written;
+}
+
+//Writes multiple bytes little endian
+int Xbee_Manager::write_bytes(uint32_t data, int num_bytes){
+  uint8_t tmp_byte = 0;
+  int bytes_written = 0;
+  while(bytes_written != num_bytes){
+    tmp_byte = 0;
+    tmp_byte = data | tmp_byte; //take value least significant byte
+    bytes_written += XBEE.write(tmp_byte);
+    data = (unsigned int)data >> 8; // shift out byte
+  }
 
   return bytes_written;
 }

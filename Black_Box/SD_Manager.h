@@ -28,7 +28,8 @@ class SD_Manager {
     void list_files(HardwareSerial *s);
     bool open_file(char* path);
     int dump_file(char* path, int path_len);
-    int dump_file(usb_serial_class &serial, char* path, int path_len);
+    int dump_file(char* path, int path_len,
+                  Xbee_Manager* xbee, usb_serial_class &serial);
     char line_buffer[100];
   private:
     //string? getDataFormat();

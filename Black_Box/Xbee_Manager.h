@@ -29,6 +29,7 @@ class Xbee_Manager {
     int file_name_buf_len;
     bool is_live_data(int id);
     int write_raw_data(CAN_message_t &msg, usb_serial_class &serial);
+    int write_bytes(uint32_t data, int num_bytes);
   private:
     char* xbeeBuffer;
     int xbeeBufferLen;

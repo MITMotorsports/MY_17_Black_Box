@@ -101,14 +101,18 @@ void loop(){
   }else if(cmd == OPEN){
     int path_len = xbee.read_file_name();
     char path[path_len];
-    for(int i = 0; i < path_len-1; i++){
+    // Serial.print("Path length: ");
+    // Serial.println(path_len);
+    // Serial.print("Pre Dumping File: ");
+    for(int i = 0; i < path_len; i++){
       path[i] = xbee.file_name_buf[i];
-      // Serial.print(path[i]);
+      // Serial.println(path[i]);
     }
-    // Serial.println();
+    path[path_len-1] = '\0';
+
     sd.open_file(path);
-    int bytes_read = sd.dump_file(path, path_len);
-    Serial.print("bytes_read from file: ");
+    int bytes_read = sd.dump_file(path, path_len, &xbee, Serial);
+    Serial.print("bytes_sent from file: ");
     Serial.println(bytes_read);
   }
 
