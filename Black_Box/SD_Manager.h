@@ -20,7 +20,6 @@ extern SdFatSdioEX sdEx;
 class SD_Manager {
   public:
     SD_Manager();
-    void initialize(time_t cur_time);
     void initialize(time_t cur_time, usb_serial_class &serial);
     //void parse_message(CAN_message_t &msg);
     int write_raw_data(CAN_message_t &msg);
@@ -39,6 +38,8 @@ class SD_Manager {
     File data_file;
     uint32_t data_pos;
     int line_count;
+    uint32_t log_start; //The millis() when the data log starts
+    int write_32_bit(uint32_t data, int num_bytes);
 };
 
 #endif

@@ -7,6 +7,8 @@
 
 #define LED 13
 
+#define VBATT 23 //0.17543859649 voltage divider
+#define V3_3 22 
 
 
 

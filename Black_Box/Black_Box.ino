@@ -25,7 +25,10 @@ Xbee_Manager xbee;
 void setup(){
   //Serial initialization
   Serial.begin(9600); //start Serial port, baud rate defaults to full USB speed
-  Serial.println("USB Serial started with  9600 Baud");
+  int serial_timeout_start = millis();
+  while(!Serial && ((millis() - serial_timeout_start) < 1000));
+  double serial_init_time = millis() - serial_timeout_start;
+  Serial.printf("USB Serial started with  9600 Baud after %d ms\n", serial_init_time);
 
   //CAN initialization
   CAN_bus_main.begin();
@@ -34,7 +37,6 @@ void setup(){
 
   //RTC initialization
   setSyncProvider(getTeensy3Time);
-  // while(!Serial);
   delay(100);
   if (timeStatus()!= timeSet) {
     Serial.println("Unable to sync with the RTC");
@@ -57,16 +59,15 @@ void setup(){
   String second = String(tmp, DEC);
   Serial.println("Current Time: "+day+'-'+month+'-'+year+' '+hour+':'+minute+':'+second);
 
-  if(!Serial){
-    sd.initialize(now());
-  }else{
-    sd.initialize(now(), Serial);
-  }
+  sd.initialize(now(), Serial);
 
   //Xbee initialization
   xbee.initialize();
   SPI.setSCK(LSM9DS1_SCK);
   pinMode(LED, OUTPUT);
+  pinMode(VBATT, INPUT);
+  pinMode(V3_3, INPUT);
+
 }
 
 int LED_timer = millis();
