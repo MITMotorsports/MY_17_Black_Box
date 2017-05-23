@@ -31,6 +31,7 @@ class SD_Manager {
     int dump_file(char* path, int path_len,
                   Xbee_Manager* xbee, usb_serial_class &serial);
     char line_buffer[100];
+    int get_log_time();
   private:
     //string? getDataFormat();
     //SdFatEX *sdEx;

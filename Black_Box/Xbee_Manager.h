@@ -17,6 +17,13 @@
 //FRONT_CAN_NODE_DRIVER_OUTPUT - 1
 extern int ID_LIST[NUM_MSG_TYPES];
 
+//This is the minimum period between message that data should be sent live
+//Indexes should have same ID values as ID_LIST
+extern int ID_PERIOD[NUM_MSG_TYPES]; //In milliseconds
+
+//The last time a message of ID corresponding to that index was sent
+extern int ID_LAST_SENT[NUM_MSG_TYPES]; //In milliseconds
+
 
 class Xbee_Manager {
   public:
@@ -27,8 +34,8 @@ class Xbee_Manager {
     int read_file_name();
     char* file_name_buf;
     int file_name_buf_len;
-    bool is_live_data(int id);
-    int write_raw_data(CAN_message_t &msg, usb_serial_class &serial);
+    bool valid_live(int id, int ts);
+    int write_raw_data(CAN_message_t &msg, usb_serial_class &serial, int ts);
     int write_bytes(uint32_t data, int num_bytes);
   private:
     char* xbeeBuffer;

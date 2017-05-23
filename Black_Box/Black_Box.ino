@@ -28,7 +28,7 @@ void setup(){
   int serial_timeout_start = millis();
   while(!Serial && ((millis() - serial_timeout_start) < 1000));
   double serial_init_time = millis() - serial_timeout_start;
-  Serial.printf("USB Serial started with  9600 Baud after %d ms\n", serial_init_time);
+  Serial.printf("USB Serial started after %d ms\n", serial_init_time);
 
   //CAN initialization
   CAN_bus_main.begin();
@@ -85,7 +85,13 @@ void loop(){
     Serial.println("main_msg");
     CAN_bus_main.read(msg); //Read message into CAN_message_t buffer
     int a = sd.write_raw_data(msg);
-    // int b = xbee.write_raw_data(msg, Serial);
+    Serial.print("Logged ");
+    Serial.print(a);
+    Serial.println(" bytes");
+    int b = xbee.write_raw_data(msg, Serial, sd.get_log_time());
+    Serial.print("Sent ");
+    Serial.print(b);
+    Serial.println(" bytes");
     Serial.println();
     //sd.parse_message(msg); //send to SD manager for logging
     //data_parse_message(msg, &SD_Manager::writeData, sd);

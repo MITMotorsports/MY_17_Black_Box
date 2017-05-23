@@ -532,3 +532,8 @@ int SD_Manager::write_32_bit(uint32_t data, int num_bytes){
 
   return bytes_written;
 }
+
+//Returns the difference bewteen the log start time and  current time in milliseconds
+int SD_Manager::get_log_time(){
+  return millis() - log_start;
+}

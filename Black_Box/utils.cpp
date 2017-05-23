@@ -6,7 +6,7 @@ void float_to_int(float val, uint8_t *int_array){
     float float_variable;
     uint8_t temp_array[4];
   } u;
-  // Overite bytes of union with float variable
+  // Overwrite bytes of union with float variable
   u.float_variable = val;
   // Assign bytes to input array
   memcpy(int_array, u.temp_array, 4);

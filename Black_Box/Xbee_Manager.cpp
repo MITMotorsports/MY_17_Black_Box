@@ -1,6 +1,8 @@
 #include "Xbee_Manager.h"
 
 int ID_LIST[NUM_MSG_TYPES] = {1320, 48};
+int ID_PERIOD[NUM_MSG_TYPES] = {100, 100};
+int ID_LAST_SENT[NUM_MSG_TYPES] = {0, 0};
 
 Xbee_Manager::Xbee_Manager(){
   xbeeBufferLen = 60;
@@ -53,84 +55,56 @@ int Xbee_Manager::read_file_name(){
   return 0;
 }
 
-bool Xbee_Manager::is_live_data(int id){
-  bool is_live_data = false;
+//This function checks if a CAN ID is in the Live data ID_LIST
+//If it is, it returns the minimum period from the ID_PERIOD list
+//If it is not, it returns -1
+bool Xbee_Manager::valid_live(int id, int ts){
+  bool valid = false;
 
+  //try to find ID in ID_LIST
   for(int i = 0; i < NUM_MSG_TYPES; i++){
     if(id == ID_LIST[i]){
-      is_live_data = true;
+      //Check if last sent was more than the minimum period ago
+      int min_period = ID_PERIOD[i];
+      if(ts - ID_LAST_SENT[i] > min_period){
+        valid = true; //It is time to send more data
+        ID_LAST_SENT[i] = ts;
+      }
       break;
     }
   }
-
-  return is_live_data;
+  return valid;
 }
 
-int Xbee_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial){
-  //do not write if file is already open
-  if(!is_live_data(msg.id)){
+int Xbee_Manager::write_raw_data(CAN_message_t &msg, usb_serial_class &serial, int ts){
+  //Only send data that should be sent live
+  if(!valid_live(msg.id, ts)){
     return -1;
   }
 
   int bytes_written = 0;
 
-  //print the timestamp
-  long t = now();
-  String ts = String(t, DEC);
-  ts = ts + "_";
-  int tsLen = ts.length();
-  char *tsBuff = new char[tsLen];
-  to_ascii_array(ts, tsBuff, tsLen);
-  for(int i = 0; i < tsLen; i++){
-    bytes_written += XBEE.write(tsBuff[i]);
-    serial.write(tsBuff[i]);
-  }
-  //print the data type
-  int id_print_len = int_byte_length(msg.id);
-  char *id_buff = new char[id_print_len];
-  to_ascii_array(msg.id, id_buff, id_print_len);
-  for(int i = 0; i < id_print_len; i++){
-    bytes_written += XBEE.write(id_buff[i]);
-    serial.print(id_buff[i]);
-  }
-  bytes_written += XBEE.write('_');
-  serial.write('_');
+  //Create the data frame
+  //29 bits - milliseconds since log start
+  //11 bits - CAN ID
+  //64 bits - DATA
+  uint64_t meta = 0;
+  uint64_t mil = ts; //time since log start
+  mil = mil << 11; //shift the data to make room for the CAN ID
+  meta = mil + msg.id; // merge the data for writing
+  bytes_written += write_bytes(meta, 5);
 
-  //print the msg length
-  bytes_written += XBEE.write((char)msg.len+48);
-  bytes_written += XBEE.write('_');
-  serial.write((char)msg.len+48);
-  serial.write('_');
-
-  //print the data
-  for(int i = 0; i < msg.len; i++){
-    bytes_written += XBEE.write(msg.buf[i]);
-    serial.write(msg.buf[i]);
+  //write the data - 8 bytes zero padded
+  for(int i = 0; i < 8; i++){
+    if(i >= msg.len) {
+      //print zero padding byte
+      uint8_t pad = 0;
+      bytes_written += XBEE.write(pad);
+    }else{
+      //print data byte
+      bytes_written += XBEE.write(msg.buf[i]);
+    }
   }
-  bytes_written += XBEE.write('_');
-  serial.write('_');
-  // serial.println();
-  //print the line count
-  int lc_print_len = int_byte_length(line_count);
-  // serial.print("print_len: ");
-  // serial.println(lc_print_len);
-  // serial.print("line_count: ");
-  // serial.println(line_count);
-  char *lc_buff = new char[lc_print_len];
-  to_ascii_array(line_count, lc_buff, lc_print_len);
-  for(int i = 0; i < lc_print_len; i++){
-    bytes_written += XBEE.write(lc_buff[i]);
-    // serial.print("index[");
-    // serial.print(i);
-    // serial.print("]: ");
-    serial.print(lc_buff[i]);
-  }
-  bytes_written += XBEE.write('\n');
-  serial.write('\n');
-  // serial.print("print whole buf: ");
-  // serial.print(lc_buff);
-  // serial.println("[]");
-  line_count++;
 
   return bytes_written;
 }
